@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { getPrismaInstance } from "..";
+import {
+  createBlogInput,
+  updateBlogInput,
+} from "@priyanshu_bartwal/blogsphere-common";
 
 export const blogRouter = new Hono<{
   Bindings: {
@@ -34,7 +38,13 @@ blogRouter.use("/*", async (c, next) => {
 
 blogRouter.post("/", async (c) => {
   const prisma = getPrismaInstance(c.env.DATABASE_URL);
+
   const body = await c.req.json();
+  const { success } = createBlogInput.safeParse(body);
+  if (!success) {
+    c.status(411);
+    return c.json({ error: "Invalid input" });
+  }
 
   const id = c.get("userId");
   try {
@@ -56,7 +66,13 @@ blogRouter.post("/", async (c) => {
 blogRouter.put("/:id", async (c) => {
   const prisma = getPrismaInstance(c.env.DATABASE_URL);
   const id = c.req.param("id");
+
   const body = await c.req.json();
+  const { success } = updateBlogInput.safeParse(body);
+  if (!success) {
+    c.status(411);
+    return c.json({ error: "Invalid input" });
+  }
 
   try {
     const blog = await prisma.post.update({

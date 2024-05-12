@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { sign } from "hono/jwt";
 import { getPrismaInstance } from "..";
+import { signupInput, signinInput } from "@priyanshu_bartwal/blogsphere-common";
 
 export const userRouter = new Hono<{
   Bindings: {
@@ -11,9 +12,14 @@ export const userRouter = new Hono<{
 
 userRouter.post("/signup", async (c) => {
   const prisma = getPrismaInstance(c.env.DATABASE_URL);
-  const body = await c.req.json();
 
-  // Checking for existing user
+  const body = await c.req.json();
+  const { success } = signupInput.safeParse(body);
+  if (!success) {
+    c.status(411);
+    return c.json({ error: "Invalid input" });
+  }
+
   const existingUser = await prisma.user.findUnique({
     where: { email: body.email },
   });
@@ -43,7 +49,13 @@ userRouter.post("/signup", async (c) => {
 
 userRouter.post("/signin", async (c) => {
   const prisma = getPrismaInstance(c.env.DATABASE_URL);
+
   const body = await c.req.json();
+  const { success } = signinInput.safeParse(body);
+  if (!success) {
+    c.status(411);
+    return c.json({ error: "Invalid input" });
+  }
 
   try {
     const user = await prisma.user.findFirst({
